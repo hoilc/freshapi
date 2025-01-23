@@ -832,9 +832,9 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				if ($order == 'o') {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id FROM public.ttrss_user_entries where owner_uid = ? and unread = false and extract(epoch from last_read) >= ? order by ref_id ASC OFFSET ? LIMIT ?");
+					$sth = $pdo->prepare("SELECT ref_id as id FROM ttrss_user_entries where owner_uid = ? and unread = false and UNIX_TIMESTAMP(last_read) >= ? order by ref_id ASC LIMIT ?, ?");
 				} else {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id FROM public.ttrss_user_entries where owner_uid = ? and unread = false and extract(epoch from last_read) >= ? order by ref_id DESC OFFSET ? LIMIT ?");
+					$sth = $pdo->prepare("SELECT ref_id as id FROM ttrss_user_entries where owner_uid = ? and unread = false and UNIX_TIMESTAMP(last_read) >= ? order by ref_id DESC LIMIT ?, ?");
 				}
 				$sth->execute([$_SESSION['uid'], $min_date, $offset, $count]);
 				$items = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -844,7 +844,7 @@ final class FreshGReaderAPI extends API {
 			}
 			try {
 				$pdo = Db::pdo();
-				$sth = $pdo->prepare("SELECT count(*) FROM public.ttrss_user_entries where owner_uid = ? and unread <> false and extract(epoch from last_read) >= ?");
+				$sth = $pdo->prepare("SELECT count(*) FROM ttrss_user_entries where owner_uid = ? and unread <> false and UNIX_TIMESTAMP(last_read) >= ?");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$itemsleft = $sth->fetch()[0];
 			} catch (PDOException $e) {
@@ -861,29 +861,27 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				if ($order == 'o') {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id
-					FROM public.ttrss_user_entries a
+					$sth = $pdo->prepare("SELECT a.ref_id as id
+					FROM ttrss_user_entries a
 					inner join
-					public.ttrss_entries b
+					ttrss_entries b
 					on a.ref_id = b.id
 					where owner_uid = ?
 					and unread = true 
-					and extract(epoch from date_entered) >= ?
+					and UNIX_TIMESTAMP(date_entered) >= ?
 					order by ref_id ASC 
-					OFFSET ?
-					LIMIT ?");
+					LIMIT ?, ?");
 				} else {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id
-					FROM public.ttrss_user_entries a
+					$sth = $pdo->prepare("SELECT a.ref_id as id
+					FROM ttrss_user_entries a
 					inner join
-					public.ttrss_entries b
+					ttrss_entries b
 					on a.ref_id = b.id
 					where owner_uid = ?
 					and unread = true 
-					and extract(epoch from date_entered) >= ?
+					and UNIX_TIMESTAMP(date_entered) >= ?
 					order by ref_id DESC 
-					OFFSET ?
-					LIMIT ?");
+					LIMIT ?, ?");
 				}
 				$sth->execute([$_SESSION['uid'], $min_date, $offset, $count]);
 				$items = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -894,13 +892,13 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				$sth = $pdo->prepare("SELECT count(*)
-				FROM public.ttrss_user_entries a
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
 				and unread = true 
-				and extract(epoch from date_entered) >= ?");
+				and UNIX_TIMESTAMP(date_entered) >= ?");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$itemsleft = $sth->fetch()[0];
 			} catch (PDOException $e) {
@@ -918,29 +916,27 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				if ($order == 'o') {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id
-					FROM public.ttrss_user_entries a
+					$sth = $pdo->prepare("SELECT a.ref_id as id
+					FROM ttrss_user_entries a
 					inner join
-					public.ttrss_entries b
+					ttrss_entries b
 					on a.ref_id = b.id
 					where owner_uid = ?
 					and marked = true 
-					and extract(epoch from date_entered) >= ?
+					and UNIX_TIMESTAMP(date_entered) >= ?
 					order by ref_id ASC 
-					OFFSET ?
-					LIMIT ?");
+					LIMIT ?, ?");
 				} else {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id
-					FROM public.ttrss_user_entries a
+					$sth = $pdo->prepare("SELECT a.ref_id as id
+					FROM ttrss_user_entries a
 					inner join
-					public.ttrss_entries b
+					ttrss_entries b
 					on a.ref_id = b.id
 					where owner_uid = ?
 					and marked = true 
-					and extract(epoch from date_entered) >= ?
+					and UNIX_TIMESTAMP(date_entered) >= ?
 					order by ref_id DESC 
-					OFFSET ?
-					LIMIT ?");
+					LIMIT ?, ?");
 				}
 				$sth->execute([$_SESSION['uid'], $min_date, $offset, $count]);
 				$items = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -951,13 +947,13 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				$sth = $pdo->prepare("SELECT count(*)
-				FROM public.ttrss_user_entries a
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
 				and marked = true 
-				and extract(epoch from date_entered) >= ?");
+				and UNIX_TIMESTAMP(date_entered) >= ?");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$itemsleft = $sth->fetch()[0];
 			} catch (PDOException $e) {
@@ -974,27 +970,25 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				if ($order == 'o') {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id
-					FROM public.ttrss_user_entries a
+					$sth = $pdo->prepare("SELECT a.ref_id as id
+					FROM ttrss_user_entries a
 					inner join
-					public.ttrss_entries b
+					ttrss_entries b
 					on a.ref_id = b.id
 					where owner_uid = ?
-					and extract(epoch from date_entered) >= ?
+					and UNIX_TIMESTAMP(date_entered) >= ?
 					order by ref_id ASC 
-					OFFSET ?
-					LIMIT ?");
+					LIMIT ?, ?");
 				} else {
-					$sth = $pdo->prepare("SELECT ref_id::varchar as id
-					FROM public.ttrss_user_entries a
+					$sth = $pdo->prepare("SELECT a.ref_id as id
+					FROM ttrss_user_entries a
 					inner join
-					public.ttrss_entries b
+					ttrss_entries b
 					on a.ref_id = b.id
 					where owner_uid = ?
-					and extract(epoch from date_entered) >= ?
+					and UNIX_TIMESTAMP(date_entered) >= ?
 					order by ref_id DESC 
-					OFFSET ?
-					LIMIT ?");
+					LIMIT ?, ?");
 				}
 				$sth->execute([$_SESSION['uid'], $min_date, $offset, $count]);
 				$items = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -1005,12 +999,12 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				$sth = $pdo->prepare("SELECT count(*)
-				FROM public.ttrss_user_entries a
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
-				and extract(epoch from date_entered) >= ?");
+				and UNIX_TIMESTAMP(date_entered) >= ?");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$itemsleft = $sth->fetch()[0];
 			} catch (PDOException $e) {
@@ -1106,7 +1100,7 @@ final class FreshGReaderAPI extends API {
 	private function streamContentsItems(array $e_ids, string $order, string $session_id) {
 		header('Content-Type: application/json; charset=UTF-8');
 		//header('Cache-Control: no-transform');
-		
+
 		// Fetch categories
 		$categoriesResponse = self::callTinyTinyRssApi('getCategories', ['include_empty' => true], $session_id);
 		$categoryMap = [];
@@ -1197,15 +1191,16 @@ final class FreshGReaderAPI extends API {
 		if ($params['view_mode'] == 'unread') { //Unread Articles
 			try {
 				$pdo = Db::pdo();
-				$sth = $pdo->prepare("SELECT extract(epoch from date_entered)::int as maxdate
-				FROM public.ttrss_user_entries a
+				$sth = $pdo->prepare("SELECT UNIX_TIMESTAMP(date_entered) as maxdate
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
 				and unread = true 
-				and extract(epoch from updated) = ?
-				order by id desc");
+				and UNIX_TIMESTAMP(updated) >= ?
+				order by maxdate DESC
+				LIMIT 1");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$minpulldate = $sth->fetch()[0];
 			} catch (PDOException $e) {
@@ -1215,13 +1210,13 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				$sth = $pdo->prepare("SELECT ref_id::varchar
-				FROM public.ttrss_user_entries a
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
 				and unread = true 
-				and extract(epoch from COALESCE(date_entered, date_updated)) > ?
+				and UNIX_TIMESTAMP(COALESCE(date_entered, date_updated)) > ?
 				order by ref_id DESC 
 				OFFSET ?
 				LIMIT ?");
@@ -1234,15 +1229,16 @@ final class FreshGReaderAPI extends API {
 		} else if ($params['view_mode'] == 'marked') { //starred articles
 			try {
 				$pdo = Db::pdo();
-				$sth = $pdo->prepare("SELECT extract(epoch from date_entered)::int as maxdate
-				FROM public.ttrss_user_entries a
+				$sth = $pdo->prepare("SELECT UNIX_TIMESTAMP(date_entered) as maxdate
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
 				and marked = true 
-				and extract(epoch from updated) = ?
-				order by id desc");
+				and UNIX_TIMESTAMP(updated) >= ?
+				order by maxdate DESC
+				LIMIT 1");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$minpulldate = $sth->fetch()[0];
 			} catch (PDOException $e) {
@@ -1252,13 +1248,13 @@ final class FreshGReaderAPI extends API {
 			try {
 				$pdo = Db::pdo();
 				$sth = $pdo->prepare("SELECT ref_id::varchar
-				FROM public.ttrss_user_entries a
+				FROM ttrss_user_entries a
 				inner join
-				public.ttrss_entries b
+				ttrss_entries b
 				on a.ref_id = b.id
 				where owner_uid = ?
 				and marked = true 
-				and extract(epoch from date_entered) > ?
+				and UNIX_TIMESTAMP(date_entered) > ?
 				order by ref_id DESC 
 				OFFSET ?
 				LIMIT ?");
