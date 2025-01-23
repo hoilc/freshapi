@@ -288,7 +288,7 @@ final class FreshGReaderAPI extends API {
 
 		$salt = null;
 		try {
-			$pdo = Db::pdo();
+			$pdo = $this->configurePdo(Db::pdo());
 			$sth = $pdo->prepare("SELECT salt FROM ttrss_users WHERE id = ?");
 			$sth->execute([$_SESSION['uid']]);
 			$salt = $sth->fetch()[0];
@@ -302,6 +302,10 @@ final class FreshGReaderAPI extends API {
 		exit();
 	}
 
+	private function configurePdo($pdo) {
+        $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+        return $pdo;
+    }
 
 	private function checkToken(string $token, string $session_id): bool {
 		//http://code.google.com/p/google-reader-api/wiki/ActionToken
@@ -310,7 +314,7 @@ final class FreshGReaderAPI extends API {
 		}
 		$salt = null;
 		try {
-			$pdo = Db::pdo();
+			$pdo = $this->configurePdo(Db::pdo());
 			$sth = $pdo->prepare("SELECT salt FROM ttrss_users WHERE id = ?");
 			$sth->execute([$_SESSION['uid']]);
 			$salt = $sth->fetch()[0];
@@ -444,7 +448,7 @@ final class FreshGReaderAPI extends API {
 				if ($feed['id'] > 0) { //Removing "Special" and "Label" cat lists
 					$site_url = '';
 					try {
-						$pdo = Db::pdo();
+						$pdo = $this->configurePdo(Db::pdo());
 						$sth = $pdo->prepare("SELECT site_url FROM ttrss_feeds WHERE id = ? and owner_uid = ?");
 						$sth->execute([$feed['id'], $_SESSION['uid']]);
 						$site_url = $sth->fetch()[0];
@@ -485,7 +489,7 @@ final class FreshGReaderAPI extends API {
 
 		if (isset($feed_id)) {
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("UPDATE ttrss_feeds SET title = ? WHERE id = ? AND owner_uid = ?");
 				return $sth->execute([$title, $feed_id, $uid]);
 			} catch (PDOException $e) {
@@ -500,7 +504,7 @@ final class FreshGReaderAPI extends API {
 			exit();
 		}
 		try {
-			$pdo = Db::pdo();
+			$pdo = $this->configurePdo(Db::pdo());
 			$category_name = clean($category_name);
 			if ($category_id == -100 && $category_name != '') {
 				// Category doesn't exist, create it
@@ -524,7 +528,7 @@ final class FreshGReaderAPI extends API {
 			exit();
 		}
 		try {
-			$pdo = Db::pdo();
+			$pdo = $this->configurePdo(Db::pdo());
 			$sth = $pdo->prepare("UPDATE ttrss_feeds SET cat_id = NULL WHERE id = ? AND owner_uid = ?");
 			return $sth->execute([$feedId, $userId]);
 		} catch (PDOException $e) {
@@ -538,7 +542,7 @@ final class FreshGReaderAPI extends API {
 			exit();
 		}
 		try {
-			$pdo = Db::pdo();
+			$pdo = $this->configurePdo(Db::pdo());
 			$sth = $pdo->prepare("SELECT count(*) FROM ttrss_feeds WHERE cat_id = ? and owner_uid = ?");
 			$sth->execute([$catId, $userId]);
 			$count = $sth->fetch()[0];
@@ -551,7 +555,7 @@ final class FreshGReaderAPI extends API {
 			return false;
 		} else {
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("DELETE FROM ttrss_feed_categories WHERE id = ? AND owner_uid = ?");
 				return $sth->execute([$catId, $userId]);
 			} catch (PDOException $e) {
@@ -787,6 +791,8 @@ final class FreshGReaderAPI extends API {
 
 	private function streamContentsItemsIds($streamId, $start_time, $stop_time, $count, $order, $filter_target, $exclude_target, $continuation, $session_id) {
 		header('Content-Type: application/json; charset=UTF-8');
+		//header('Cache-Control: no-transform');
+
 		$params = [
 			'limit' => $count ? intval($count) : 0, // Max articles to send to client
 			'skip' => $continuation ? intval($continuation) : 0, //May look at replacing this with since_id
@@ -830,7 +836,7 @@ final class FreshGReaderAPI extends API {
 		
 		if ($view_mode == 'read_only') { //Read Articles
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				if ($order == 'o') {
 					$sth = $pdo->prepare("SELECT ref_id as id FROM ttrss_user_entries where owner_uid = ? and unread = false and UNIX_TIMESTAMP(last_read) >= ? order by ref_id ASC LIMIT ?, ?");
 				} else {
@@ -843,7 +849,7 @@ final class FreshGReaderAPI extends API {
 				self::badRequest();
 			}
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT count(*) FROM ttrss_user_entries where owner_uid = ? and unread <> false and UNIX_TIMESTAMP(last_read) >= ?");
 				$sth->execute([$_SESSION['uid'], $min_date]);
 				$itemsleft = $sth->fetch()[0];
@@ -859,7 +865,7 @@ final class FreshGReaderAPI extends API {
 			}
 		} else if ($view_mode == 'unread_only') { //Unread Articles
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				if ($order == 'o') {
 					$sth = $pdo->prepare("SELECT a.ref_id as id
 					FROM ttrss_user_entries a
@@ -890,7 +896,7 @@ final class FreshGReaderAPI extends API {
 				self::badRequest();
 			}
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT count(*)
 				FROM ttrss_user_entries a
 				inner join
@@ -914,7 +920,7 @@ final class FreshGReaderAPI extends API {
 		}
 		else if ($view_mode == 'starred') { //starred articles
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				if ($order == 'o') {
 					$sth = $pdo->prepare("SELECT a.ref_id as id
 					FROM ttrss_user_entries a
@@ -945,7 +951,7 @@ final class FreshGReaderAPI extends API {
 				self::badRequest();
 			}
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT count(*)
 				FROM ttrss_user_entries a
 				inner join
@@ -968,7 +974,7 @@ final class FreshGReaderAPI extends API {
 			}
 		} else if ($view_mode == 'all_articles') { // all articles
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				if ($order == 'o') {
 					$sth = $pdo->prepare("SELECT a.ref_id as id
 					FROM ttrss_user_entries a
@@ -997,7 +1003,7 @@ final class FreshGReaderAPI extends API {
 				self::badRequest();
 			}
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT count(*)
 				FROM ttrss_user_entries a
 				inner join
@@ -1171,6 +1177,8 @@ final class FreshGReaderAPI extends API {
 
 	private function streamContents($path, $streamId, $start_time, $stop_time, $count, $order, $filter_target, $exclude_target, $continuation, $session_id) {
 		header('Content-Type: application/json; charset=UTF-8');
+		//header('Cache-Control: no-transform');
+
 		$params = [
 			'limit' => $count ? intval($count) : 0, // Max articles to send to client
 			'skip' => $continuation ? intval($continuation) : 0, //May look at replacing this with since_id
@@ -1190,7 +1198,7 @@ final class FreshGReaderAPI extends API {
 		
 		if ($params['view_mode'] == 'unread') { //Unread Articles
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT UNIX_TIMESTAMP(date_entered) as maxdate
 				FROM ttrss_user_entries a
 				inner join
@@ -1208,7 +1216,7 @@ final class FreshGReaderAPI extends API {
 				self::badRequest();
 			}
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT ref_id::varchar
 				FROM ttrss_user_entries a
 				inner join
@@ -1228,7 +1236,7 @@ final class FreshGReaderAPI extends API {
 			}
 		} else if ($params['view_mode'] == 'marked') { //starred articles
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT UNIX_TIMESTAMP(date_entered) as maxdate
 				FROM ttrss_user_entries a
 				inner join
@@ -1246,7 +1254,7 @@ final class FreshGReaderAPI extends API {
 				self::badRequest();
 			}
 			try {
-				$pdo = Db::pdo();
+				$pdo = $this->configurePdo(Db::pdo());
 				$sth = $pdo->prepare("SELECT ref_id::varchar
 				FROM ttrss_user_entries a
 				inner join
@@ -1455,7 +1463,7 @@ final class FreshGReaderAPI extends API {
 					if ($category['title'] == $oldName) {
 						// It's a category, so we can rename it
 						try {
-							$pdo = Db::pdo();
+							$pdo = $this->configurePdo(Db::pdo());
 							$sth = $pdo->prepare("UPDATE ttrss_feed_categories SET title = ? WHERE id = ? AND owner_uid = ?");
 							$sth->execute([$newName, $category['id'], $_SESSION['uid']]);
 							exit('OK');
@@ -1464,14 +1472,14 @@ final class FreshGReaderAPI extends API {
 						}
 					}
 				}
-			} 
+			}
 			
 			if ($labelsResponse && isset($labelsResponse['status']) && $labelsResponse['status'] == 0) {
 				foreach ($labelsResponse['content'] as $label) {
 					if ($label['caption'] == $oldName) {
 						// It's a label, so we can rename it
 						try {
-							$pdo = Db::pdo();
+							$pdo = $this->configurePdo(Db::pdo());
 							$sth = $pdo->prepare("UPDATE ttrss_labels2 SET caption = ? WHERE caption = ? AND owner_uid = ?");
 							$sth->execute([$newName, $oldName, $_SESSION['uid']]);
 							exit('OK');
@@ -1521,7 +1529,7 @@ final class FreshGReaderAPI extends API {
 				foreach ($labelsResponse['content'] as $label) {
 					if ($label['caption'] == $tagName) {
 						try {
-							$pdo = Db::pdo();
+							$pdo = $this->configurePdo(Db::pdo());
 							$sth = $pdo->prepare("SELECT id FROM ttrss_labels2 WHERE caption = ? and owner_uid = ?");
 							$sth->execute([$tagName, $_SESSION['uid']]);
 							$deletelabelid = $sth->fetch()[0];
@@ -1535,7 +1543,7 @@ final class FreshGReaderAPI extends API {
 						} else {
 							
 							try {
-								$pdo = Db::pdo();
+								$pdo = $this->configurePdo(Db::pdo());
 								$sth = $pdo->prepare("DELETE FROM ttrss_user_labels2 WHERE label_id = ?");
 								$sth->execute([$deletelabelid]);
 							} catch (PDOException $e) {
@@ -1543,7 +1551,7 @@ final class FreshGReaderAPI extends API {
 								self::badRequest();
 							}
 							try {
-								$pdo = Db::pdo();
+								$pdo = $this->configurePdo(Db::pdo());
 								$sth = $pdo->prepare("DELETE FROM ttrss_labels2 WHERE id = ? AND owner_uid = ?");
 								$sth->execute([$deletelabelid, $_SESSION['uid']]);
 							} catch (PDOException $e) {
