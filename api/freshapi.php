@@ -1217,7 +1217,7 @@ final class FreshGReaderAPI extends API {
 			}
 			try {
 				$pdo = $this->configurePdo(Db::pdo());
-				$sth = $pdo->prepare("SELECT ref_id::varchar
+				$sth = $pdo->prepare("SELECT ref_id
 				FROM ttrss_user_entries a
 				inner join
 				ttrss_entries b
@@ -1226,8 +1226,7 @@ final class FreshGReaderAPI extends API {
 				and unread = true 
 				and UNIX_TIMESTAMP(COALESCE(date_entered, date_updated)) > ?
 				order by ref_id DESC 
-				OFFSET ?
-				LIMIT ?");
+				LIMIT ?, ?");
 				$sth->execute([$_SESSION['uid'], $minpulldate, $offset, $count]);
 				$validitems = $sth->fetchAll(PDO::FETCH_COLUMN);
 			} catch (PDOException $e) {
@@ -1255,7 +1254,7 @@ final class FreshGReaderAPI extends API {
 			}
 			try {
 				$pdo = $this->configurePdo(Db::pdo());
-				$sth = $pdo->prepare("SELECT ref_id::varchar
+				$sth = $pdo->prepare("SELECT ref_id
 				FROM ttrss_user_entries a
 				inner join
 				ttrss_entries b
@@ -1264,8 +1263,7 @@ final class FreshGReaderAPI extends API {
 				and marked = true 
 				and UNIX_TIMESTAMP(date_entered) > ?
 				order by ref_id DESC 
-				OFFSET ?
-				LIMIT ?");
+				LIMIT ?, ?");
 				$sth->execute([$_SESSION['uid'], $minpulldate, $offset, $count]);
 				$validitems = $sth->fetchAll(PDO::FETCH_COLUMN);
 			} catch (PDOException $e) {
